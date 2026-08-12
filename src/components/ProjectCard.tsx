@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project } from '../types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { Badge } from './ui/badge';
-import { FolderKanban, Users, Trash2, ArrowRight, ShieldCheck, UserPlus } from 'lucide-react';
+import { FolderKanban, ArrowRight, ShieldCheck, MoreVertical, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface ProjectCardProps {
@@ -17,9 +16,23 @@ interface ProjectCardProps {
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onManageMembers }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  console.log(project);
   const isOwnerOrAdmin =
     user?.role?.name === 'admin' || user?.id === project.owner?.id;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const handleOpenBoard = () => {
     if (project.boards && project.boards.length > 0) {
@@ -39,9 +52,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
       .slice(0, 2);
   };
 
+
   return (
-    <Card className="group relative border border-slate-800/80 bg-slate-900/60 hover:bg-slate-900/90 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:border-slate-700 transition-all duration-300 flex flex-col justify-between overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-80 group-hover:opacity-100 transition-opacity" />
+    <Card className="group relative border border-slate-800/80 bg-slate-900/60 hover:bg-slate-900/90 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:border-slate-700 transition-all duration-300 flex flex-col justify-between overflow-hidden"
+    >
 
       <div>
         <CardHeader className="pt-6 pb-3">
@@ -62,19 +76,53 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
               </div>
             </div>
 
-            {isOwnerOrAdmin && onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(project.id);
-                }}
-                className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg h-8 w-8 transition-colors"
-                title="Delete project"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+            {isOwnerOrAdmin && (onDelete || onManageMembers) && (
+              <div className="relative" ref={menuRef}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen((prev) => !prev);
+                  }}
+                  className="text-slate-500 hover:text-slate-200 hover:bg-slate-700/60 rounded-lg h-8 w-8 transition-colors"
+                  title="More options"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+
+                {menuOpen && (
+                  <div
+                    className="absolute right-0 top-9 z-50 min-w-[180px] rounded-xl border border-slate-700/80 bg-slate-900/95 backdrop-blur-md shadow-2xl py-1 animate-in fade-in slide-in-from-top-2 duration-150"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {onManageMembers && (
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onManageMembers(project);
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-blue-400 hover:bg-slate-800/80 transition-colors"
+                      >
+                        <Users className="w-4 h-4 text-blue-400" />
+                        Manage Members
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onDelete(project.id);
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-400" />
+                        Delete Project
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -84,17 +132,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
         </CardHeader>
 
         <CardContent className="py-2 space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 border-t border-b border-slate-800/80 py-2.5">
-            <div className="flex items-center gap-1.5 font-medium text-slate-300">
-              <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{project.boards?.length || 0} Board(s)</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 font-medium text-slate-300">
-              <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span>{(project.members?.length || 0) + 1} Member(s)</span>
-            </div>
-          </div>
 
           {/* Member Avatars */}
           <div className="flex items-center justify-between">
@@ -114,27 +151,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
               )}
             </div>
 
-            {isOwnerOrAdmin && onManageMembers && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onManageMembers(project)}
-                className="text-xs text-slate-400 hover:text-blue-400 hover:bg-slate-800/80 h-7 px-2"
-              >
-                <UserPlus className="w-3.5 h-3.5 mr-1" />
-                Members
-              </Button>
-            )}
+
           </div>
         </CardContent>
       </div>
 
-      <CardFooter className="pt-3 pb-4">
+      <CardFooter className="pt-3 pb-4 bg-transparent border-t border-slate-800/70">
         <Button
           onClick={handleOpenBoard}
           className="w-full bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white transition-all font-semibold flex items-center justify-center gap-2 group/btn shadow-md"
         >
-          <span>Open Workspace</span>
+          <span>Open Project</span>
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
         </Button>
       </CardFooter>

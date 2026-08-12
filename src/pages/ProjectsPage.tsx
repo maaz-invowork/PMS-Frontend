@@ -83,9 +83,8 @@ export const ProjectsPage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">
               <span>Project Dashboard</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Your Workspaces</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Manage your project spaces, access boards, and collaborate with your team.
+              View, track, and manage all active projects across your workspace in one place.
             </p>
           </div>
 

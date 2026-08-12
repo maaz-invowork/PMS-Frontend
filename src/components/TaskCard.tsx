@@ -93,7 +93,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
 
         {task.priority && (
           <span
-            className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border shrink-0 ${getPriorityStyle(
+            className={`text-[8px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border shrink-0 ${getPriorityStyle(
               task.priority
             )}`}
           >
@@ -110,7 +110,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
       )}
 
       {/* Footer Info: Due Date + Assignee */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400 pl-6">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3 text-slate-500" />
           <span>
@@ -125,8 +125,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
 
         {task.assignee ? (
           <div className="flex items-center gap-1.5" title={`Assigned to ${task.assignee.full_name}`}>
-            <Avatar className="w-5 h-5 bg-blue-600 text-white font-bold text-[9px]">
-              <AvatarFallback>{getInitials(task.assignee.full_name)}</AvatarFallback>
+            <Avatar className="w-5 h-5 bg-blue-600 text-white font-semibold">
+              <AvatarFallback className="text-[10px]">{getInitials(task.assignee.full_name)}</AvatarFallback>
             </Avatar>
             <span className="text-[11px] font-medium text-slate-300 max-w-[80px] truncate">
               {task.assignee.full_name.split(' ')[0]}

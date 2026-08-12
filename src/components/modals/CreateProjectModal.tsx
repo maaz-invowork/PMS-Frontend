@@ -78,7 +78,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             />
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 bg-transparent border-0">
             <Button
               type="button"
               variant="ghost"

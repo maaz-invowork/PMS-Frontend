@@ -369,7 +369,7 @@ export const BoardViewPage: React.FC = () => {
               onClick={() => setIsCreateColumnOpen(true)}
               disabled={!activeBoard}
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1.5 shadow-md"
+              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-1.5 shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Add Column</span>
@@ -379,9 +379,6 @@ export const BoardViewPage: React.FC = () => {
 
         {/* Board Tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto pb-2 pt-1 border-t border-slate-800/50">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2 flex items-center gap-1">
-            <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" /> Boards:
-          </span>
 
           {boards.map((b) => (
             <Link
@@ -461,16 +458,6 @@ export const BoardViewPage: React.FC = () => {
                 ))}
               </SortableContext>
 
-              {/* Quick Add Column Card */}
-              <button
-                onClick={() => setIsCreateColumnOpen(true)}
-                className="w-80 min-w-[20rem] max-w-[20rem] h-32 rounded-2xl border-2 border-dashed border-slate-800 hover:border-slate-700 bg-slate-900/20 hover:bg-slate-900/50 flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-400 transition-all font-semibold text-sm group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-slate-800 group-hover:bg-blue-500/10 flex items-center justify-center transition-colors">
-                  <Plus className="w-4 h-4" />
-                </div>
-                <span>Add Another Column</span>
-              </button>
             </div>
 
             {/* Drag Overlay Preview */}

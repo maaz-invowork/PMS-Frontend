@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Project, UserMinimal } from '../../types';
-import { Loader2, UserPlus, Users, X } from 'lucide-react';
+import { Loader2, Users, Search, Check, UserMinus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { api } from '../../lib/api';
 
 interface ManageMembersModalProps {
   project: Project | null;
+  allUsers?: UserMinimal[]; // Optional: pass externally or allow modal to fetch automatically
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddMembers: (projectId: number, userIds: number[]) => Promise<void>;
@@ -16,47 +18,132 @@ interface ManageMembersModalProps {
 
 export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
   project,
+  allUsers: externalUsers,
   open,
   onOpenChange,
   onAddMembers,
   onRemoveMember,
 }) => {
-  const [userIdInput, setUserIdInput] = useState('');
+  // ---------------------------------------------------------------------------
+  // 1. HOOKS
+  // ---------------------------------------------------------------------------
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingUsers, setFetchingUsers] = useState(false);
+  const [internalUsers, setInternalUsers] = useState<UserMinimal[]>([]);
+  const [localMembers, setLocalMembers] = useState<UserMinimal[]>([]);
   const [error, setError] = useState('');
 
-  if (!project) return null;
+  // Sync local members whenever project prop updates
+  useEffect(() => {
+    if (project?.members) {
+      setLocalMembers(project.members);
+    } else {
+      setLocalMembers([]);
+    }
+  }, [project?.members]);
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    const ids = userIdInput
-      .split(',')
-      .map((id) => parseInt(id.trim(), 10))
-      .filter((id) => !isNaN(id) && id > 0);
-
-    if (ids.length === 0) {
-      setError('Please enter at least one valid numeric User ID.');
+  // Fetch assignable members automatically when the modal opens
+  useEffect(() => {
+    if (!open) {
+      // Reset state on close
+      setSelectedUserIds([]);
+      setSearchQuery('');
+      setError('');
       return;
     }
 
+    const fetchAssignableUsers = async () => {
+      if (externalUsers && externalUsers.length > 0) return;
+
+      setFetchingUsers(true);
+      try {
+        const response = await api.get<UserMinimal[]>('/projects/members');
+        setInternalUsers(response.data);
+      } catch (err: any) {
+        console.error('Failed to fetch available users:', err);
+        setError('Failed to load user list.');
+      } finally {
+        setFetchingUsers(false);
+      }
+    };
+
+    fetchAssignableUsers();
+  }, [open, externalUsers]);
+
+  const usersToFilter = externalUsers && externalUsers.length > 0 ? externalUsers : internalUsers;
+
+  // Extract existing member IDs for fast lookup using localMembers state
+  const existingMemberIds = useMemo(() => {
+    const ids = new Set<number>();
+    if (!project) return ids;
+
+    if (project.owner?.id) ids.add(project.owner.id);
+    localMembers.forEach((m) => ids.add(m.id));
+    return ids;
+  }, [project, localMembers]);
+
+  // Filter out users who are already members, then apply text search filter
+  const availableUsers = useMemo(() => {
+    if (!project) return [];
+
+    return usersToFilter
+      .filter((user) => !existingMemberIds.has(user.id))
+      .filter((user) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          user.full_name?.toLowerCase().includes(query) ||
+          user.username?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query)
+        );
+      });
+  }, [usersToFilter, existingMemberIds, searchQuery, project]);
+
+  // ---------------------------------------------------------------------------
+  // 2. CONDITIONAL RETURN
+  // ---------------------------------------------------------------------------
+  if (!project) return null;
+
+  // ---------------------------------------------------------------------------
+  // 3. HANDLERS & HELPERS
+  // ---------------------------------------------------------------------------
+  const toggleUserSelection = (userId: number) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleAddSelected = async () => {
+    if (selectedUserIds.length === 0) return;
+    setError('');
     setLoading(true);
+
     try {
-      await onAddMembers(project.id, ids);
-      setUserIdInput('');
+      await onAddMembers(project.id, selectedUserIds);
+
+      // Update local members state immediately
+      const addedUsers = usersToFilter.filter((user) => selectedUserIds.includes(user.id));
+      setLocalMembers((prev) => [...prev, ...addedUsers]);
+
+      setSelectedUserIds([]);
+      setSearchQuery('');
     } catch (err: any) {
       console.error('Failed to add members:', err);
-      setError(err.response?.data?.detail || 'Failed to add member. Ensure user ID exists.');
+      setError(err.response?.data?.detail || 'Failed to add members.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemove = async (userId: number) => {
+    setError('');
     setLoading(true);
     try {
       await onRemoveMember(project.id, userId);
+
+      // Update local members state immediately
+      setLocalMembers((prev) => prev.filter((m) => m.id !== userId));
     } catch (err: any) {
       console.error('Failed to remove member:', err);
       setError(err.response?.data?.detail || 'Failed to remove member.');
@@ -75,6 +162,9 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
       .slice(0, 2);
   };
 
+  // ---------------------------------------------------------------------------
+  // 4. RENDER
+  // ---------------------------------------------------------------------------
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
@@ -86,7 +176,7 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
             <DialogTitle className="text-xl font-bold">Manage Project Members</DialogTitle>
           </div>
           <DialogDescription className="text-slate-400">
-            Add team members by their User ID to collaborate on project boards.
+            Select users to invite or remove members from this project.
           </DialogDescription>
         </DialogHeader>
 
@@ -97,33 +187,98 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
             </div>
           )}
 
-          {/* Add member form */}
-          <form onSubmit={handleAdd} className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="User ID (e.g. 2 or 2, 3)"
-              value={userIdInput}
-              onChange={(e) => setUserIdInput(e.target.value)}
-              className="bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500 text-sm"
-            />
-            <Button
-              type="submit"
-              disabled={loading || !userIdInput.trim()}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold shrink-0"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            </Button>
-          </form>
-
-          {/* Existing Members List */}
-          <div className="space-y-2 pt-2">
+          {/* Add Members Section */}
+          <div className="space-y-2">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Current Members ({(project.members?.length || 0) + 1})
+              Add New Members
             </span>
 
-            <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+              <Input
+                type="text"
+                placeholder="Search by name, username, or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500 text-sm"
+              />
+            </div>
+
+            {/* Available Users Selection List */}
+            <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border border-slate-800/60 rounded-lg p-1.5 bg-slate-950/30">
+              {fetchingUsers ? (
+                <div className="flex items-center justify-center py-6 text-slate-400 text-xs gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                  Fetching available members...
+                </div>
+              ) : availableUsers.length > 0 ? (
+                availableUsers.map((user) => {
+                  const isSelected = selectedUserIds.includes(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => toggleUserSelection(user.id)}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600/20 border border-blue-500/40 text-white'
+                          : 'hover:bg-slate-800/50 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="w-6 h-6 bg-slate-800 text-slate-200 text-[10px]">
+                          <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="text-xs font-medium">{user.full_name || user.username}</div>
+                          <div className="text-[10px] text-slate-500">{user.email}</div>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          isSelected
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'border-slate-700 bg-slate-900'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-xs text-slate-500 italic text-center py-3">
+                  {searchQuery ? 'No matching users found.' : 'All registered members are already added.'}
+                </div>
+              )}
+            </div>
+
+            {/* Submit Selection Button */}
+            {selectedUserIds.length > 0 && (
+              <Button
+                onClick={handleAddSelected}
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs h-8 mt-1"
+              >
+                {loading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                ) : (
+                  `Add ${selectedUserIds.length} Selected Member${selectedUserIds.length > 1 ? 's' : ''}`
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Current Members List */}
+          <div className="space-y-2 pt-2 border-t border-slate-800/80">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Current Members ({localMembers.length + 1})
+            </span>
+
+            <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
               {/* Owner */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/80">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/40 border border-slate-800/80">
                 <div className="flex items-center gap-2.5">
                   <Avatar className="w-7 h-7 bg-blue-600 text-white font-bold text-xs">
                     <AvatarFallback>{getInitials(project.owner?.full_name)}</AvatarFallback>
@@ -138,36 +293,38 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
               </div>
 
               {/* Members */}
-              {project.members && project.members.length > 0 ? (
-                project.members.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/80"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Avatar className="w-7 h-7 bg-slate-800 text-slate-200 text-xs">
-                        <AvatarFallback>{getInitials(m.full_name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-xs font-semibold text-slate-200">
-                          {m.full_name || m.username}
-                        </div>
-                        <div className="text-[10px] text-slate-400">ID: {m.id}</div>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemove(m.id)}
-                      disabled={loading}
-                      className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-7 w-7 rounded-lg"
-                      title="Remove member"
+              {localMembers.length > 0 ? (
+                localMembers
+                  .filter((m) => m.id !== project.owner?.id)
+                  .map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-slate-950/40 border border-slate-800/80"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ))
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="w-7 h-7 bg-slate-800 text-slate-200 text-xs">
+                          <AvatarFallback>{getInitials(m.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="text-xs font-semibold text-slate-200">
+                            {m.full_name || m.username}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{m.email}</div>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemove(m.id)}
+                        disabled={loading}
+                        className="text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 h-7 w-7 rounded-lg"
+                        title="Remove member"
+                      >
+                        <UserMinus className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))
               ) : (
                 <div className="text-xs text-slate-500 italic text-center py-2">
                   No additional members assigned yet.
@@ -177,15 +334,6 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white"
-          >
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

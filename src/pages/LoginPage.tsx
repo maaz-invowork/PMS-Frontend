@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { LayoutGrid, Lock, User, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Card, CardContent} from '../components/ui/card';
+import { Lock, AlertCircle, ArrowRight, Loader2, CircleUserRound } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -40,20 +40,15 @@ export const LoginPage: React.FC = () => {
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-xl shadow-blue-500/20 mb-2">
-            <LayoutGrid className="w-7 h-7 text-white" />
+          <div className='flex justify-center items-center'>
+            <img src="/logo.png" className="w-42" alt="Logo" />
           </div>
+
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-slate-400">Sign in to your Project Management workspace</p>
+          <p className="text-sm text-slate-400">Sign in to your Workspace</p>
         </div>
 
         <Card className="border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-2xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl text-slate-100 font-semibold">Account Sign In</CardTitle>
-            <CardDescription className="text-slate-400">
-              Enter your credentials to access your projects and boards
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center gap-2 text-rose-400 text-sm">
@@ -64,15 +59,14 @@ export const LoginPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-medium text-slate-300 tracking-wider">
                   Username
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <CircleUserRound className="w-4 h-4 absolute left-3 top-2 text-slate-400" />
                   <Input
                     type="text"
                     required
-                    placeholder="e.g. john_doe"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="pl-9 bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500"
@@ -81,15 +75,14 @@ export const LoginPage: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-medium text-slate-300 tracking-wider">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <Lock className="w-4 h-4 absolute left-3 top-2 text-slate-400" />
                   <Input
                     type="password"
                     required
-                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-9 bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500"
@@ -105,7 +98,7 @@ export const LoginPage: React.FC = () => {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Signing in...
+                    Signing in
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
@@ -116,11 +109,11 @@ export const LoginPage: React.FC = () => {
             </form>
 
             <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-xs text-slate-400">
                 Don't have an account?{' '}
                 <Link
                   to="/register"
-                  className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                  className="font-light text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   Create one now
                 </Link>

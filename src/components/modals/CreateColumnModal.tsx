@@ -63,7 +63,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
             />
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 bg-transparent border-0">
             <Button
               type="button"
               variant="ghost"
@@ -75,7 +75,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
             <Button
               type="submit"
               disabled={loading || !name.trim()}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md"
+              className="bg-blue-500 hover:bg-blue-500/80 text-white font-semibold shadow-md transition-colors duration-200"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

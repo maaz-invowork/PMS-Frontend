@@ -120,11 +120,35 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-color: oklch(34.945% 0.00137 15.63) #1a1a1a;
+    scrollbar-width: auto;
     }
+
+  
   body {
     @apply bg-background text-foreground;
     }
   html {
     @apply font-sans;
     }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px #0b0f19 inset !important; 
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover, 
+  .dark input:-webkit-autofill:focus,
+  .dark input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px oklch(0.145 0 0) inset !important;
+    -webkit-text-fill-color: oklch(0.985 0 0) !important;
+  }
 }
