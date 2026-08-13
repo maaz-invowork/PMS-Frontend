@@ -39,10 +39,10 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
       <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Columns className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Columns className="w-4 h-4" />
             </div>
-            <DialogTitle className="text-xl font-bold">Add Board Column</DialogTitle>
+            <DialogTitle className="text-lg font-semibold pt-1">Add Board Column</DialogTitle>
           </div>
           <DialogDescription className="text-slate-400">
             Columns group tasks by workflow status (e.g. To Do, In Progress, Done).

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Board, BoardColumn, Project, Task, TokenResponse, User } from '../types';
+import { Board, BoardColumn, Project, Task, TokenResponse, User, UserMinimal } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -11,7 +11,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('pms_token');
+  const token = localStorage.getItem('kinetix_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,7 +22,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('pms_token');
+      localStorage.removeItem('kinetix_token');
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         window.location.href = '/login';
       }
@@ -81,6 +81,10 @@ export const projectsApi = {
     const res = await api.post(`/projects/${projectId}/members/remove`, { user_ids: userIds });
     return res.data;
   },
+  fetchUsers: async () => {
+    const res = await api.get<UserMinimal[]>('/projects/members');
+    return res.data;
+  }
 };
 
 // Boards Service

@@ -22,7 +22,10 @@ import { CreateBoardModal } from '../components/modals/CreateBoardModal';
 import { CreateColumnModal } from '../components/modals/CreateColumnModal';
 import { CreateTaskModal } from '../components/modals/CreateTaskModal';
 import { TaskDetailModal } from '../components/modals/TaskDetailModal';
+import { ManageMembersModal } from '../components/modals/ManageMembersModal';
+import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { Button } from '../components/ui/button';
+import { useAuth } from '../context/AuthContext';
 import {
   FolderKanban,
   Plus,
@@ -30,13 +33,14 @@ import {
   Loader2,
   Trash2,
   Users,
-  LayoutGrid,
+  Columns3,
 } from 'lucide-react';
 
 export const BoardViewPage: React.FC = () => {
   const { projectId, boardId } = useParams<{ projectId: string; boardId?: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
 
   const parsedProjectId = Number(projectId);
   const parsedBoardId = boardId ? Number(boardId) : undefined;
@@ -49,6 +53,9 @@ export const BoardViewPage: React.FC = () => {
   // Modals state
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
   const [isCreateColumnOpen, setIsCreateColumnOpen] = useState(false);
+  const [isManageMembersOpen, setIsManageMembersOpen] = useState(false);
+  const [confirmDeleteBoard, setConfirmDeleteBoard] = useState(false);
+  const [confirmDeleteColumnId, setConfirmDeleteColumnId] = useState<number | null>(null);
   const [createTaskModal, setCreateTaskModal] = useState<{ open: boolean; columnId: number | null; columnName?: string }>({
     open: false,
     columnId: null,
@@ -89,19 +96,20 @@ export const BoardViewPage: React.FC = () => {
     enabled: !!activeBoard?.id,
   });
 
-  // Sync fetched columns into local state
   useEffect(() => {
-    if (fetchedColumns) {
-      setColumns(fetchedColumns);
-    }
-  }, [fetchedColumns]);
+  if (fetchedColumns && fetchedColumns.length > 0) {
+    // Only update if columns local state is empty or when active board switches
+    setColumns(fetchedColumns);
+  }
+}, [activeBoard?.id]); // Depend on activeBoard.id instead of fetchedColumns reference
 
-  // If no boardId in URL but boards exist, navigate to first board
-  useEffect(() => {
-    if (!boardId && boards.length > 0) {
-      navigate(`/projects/${projectId}/boards/${boards[0].id}`, { replace: true });
-    }
-  }, [boardId, boards, projectId, navigate]);
+const firstBoardId = boards[0]?.id;
+
+useEffect(() => {
+  if (!boardId && firstBoardId) {
+    navigate(`/projects/${projectId}/boards/${firstBoardId}`, { replace: true });
+  }
+}, [boardId, firstBoardId, projectId, navigate]);
 
   // Column / Board / Task Mutations
   const createBoardMutation = useMutation({
@@ -161,6 +169,24 @@ export const BoardViewPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['columns', activeBoard?.id] });
     },
   });
+
+  const addMembersMutation = useMutation({
+    mutationFn: ({ projectId: pId, userIds }: { projectId: number; userIds: number[] }) =>
+      projectsApi.addMembers(pId, userIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', parsedProjectId] });
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ projectId: pId, userId }: { projectId: number; userId: number }) =>
+      projectsApi.removeMembers(pId, [userId]),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', parsedProjectId] });
+    },
+  });
+
+  const isOwner = !!(currentUser && project && currentUser.id === project.owner?.id);
 
   // Column IDs for SortableContext
   const columnIds = useMemo(() => columns.map((c) => c.id), [columns]);
@@ -327,17 +353,17 @@ export const BoardViewPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col overflow-x-hidden">
       <Navbar />
 
-      {/* Workspace Sub-Header */}
       <div className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link
-              to="/projects"
-              className="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            <button
+              type="button"
+              onClick={() => navigate('/projects')}
+              className="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               title="Back to projects"
             >
               <ArrowLeft className="w-5 h-5" />
-            </Link>
+            </button>
 
             <div>
               <div className="flex items-center gap-2">
@@ -350,16 +376,23 @@ export const BoardViewPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsManageMembersOpen(true)}
+                className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 border-2 border-blue-500/30 text-xs"
+              >
+                <Users className="w-3.5 h-3.5 mr-1" /> Manage Members
+              </Button>
+            )}
+
             {activeBoard && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  if (confirm(`Delete board "${activeBoard.name}"?`)) {
-                    deleteBoardMutation.mutate(activeBoard.id);
-                  }
-                }}
-                className="text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 text-xs"
+                onClick={() => setConfirmDeleteBoard(true)}
+                className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10  border-2 border-rose-500/30 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Board
               </Button>
@@ -384,11 +417,10 @@ export const BoardViewPage: React.FC = () => {
             <Link
               key={b.id}
               to={`/projects/${parsedProjectId}/boards/${b.id}`}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                activeBoard?.id === b.id
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeBoard?.id === b.id
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                   : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
+                }`}
             >
               {b.name}
             </Link>
@@ -448,16 +480,29 @@ export const BoardViewPage: React.FC = () => {
                     onUpdateColumn={(cId, name) =>
                       updateColumnMutation.mutate({ id: cId, name })
                     }
-                    onDeleteColumn={(cId) => {
-                      if (confirm('Delete this column and all its tasks?')) {
-                        deleteColumnMutation.mutate(cId);
-                      }
-                    }}
+                    onDeleteColumn={(cId) => setConfirmDeleteColumnId(cId)}
                     onClickTask={(task) => setSelectedTask(task)}
                   />
                 ))}
               </SortableContext>
 
+              {columns.length === 0 && (
+                <div className="flex flex-1 items-center justify-center min-h-[calc(100vh-18rem)]">
+                  <div className="flex flex-col items-center gap-4 text-center px-6 py-10 rounded-2xl bg-slate-900/50 border border-slate-800/80 border-dashed max-w-sm w-full">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                      <Columns3 className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-200">No Columns Yet</h3>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        You don't have any columns created.<br />
+                        Kindly create a column by clicking the{' '}
+                        <span className="text-blue-400 font-semibold">Add Column</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Drag Overlay Preview */}
@@ -466,10 +511,10 @@ export const BoardViewPage: React.FC = () => {
                 <ColumnContainer
                   column={activeColumn}
                   tasks={activeColumn.tasks}
-                  onAddTask={() => {}}
-                  onUpdateColumn={() => {}}
-                  onDeleteColumn={() => {}}
-                  onClickTask={() => {}}
+                  onAddTask={() => { }}
+                  onUpdateColumn={() => { }}
+                  onDeleteColumn={() => { }}
+                  onClickTask={() => { }}
                 />
               )}
               {activeTask && <TaskCard task={activeTask} />}
@@ -521,6 +566,36 @@ export const BoardViewPage: React.FC = () => {
           await deleteTaskMutation.mutateAsync(taskId);
           setSelectedTask(null);
         }}
+      />
+
+      <ManageMembersModal
+        project={project ?? null}
+        open={isManageMembersOpen}
+        onOpenChange={setIsManageMembersOpen}
+        onAddMembers={async (projId, userIds) => {
+          await addMembersMutation.mutateAsync({ projectId: projId, userIds });
+        }}
+        onRemoveMember={async (projId, userId) => {
+          await removeMemberMutation.mutateAsync({ projectId: projId, userId });
+        }}
+      />
+
+      <ConfirmModal
+        open={confirmDeleteBoard}
+        onOpenChange={setConfirmDeleteBoard}
+        title="Delete Board"
+        message={`Are you sure you want to delete the board "${activeBoard?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete Board"
+        onConfirm={() => activeBoard && deleteBoardMutation.mutate(activeBoard.id)}
+      />
+
+      <ConfirmModal
+        open={confirmDeleteColumnId !== null}
+        onOpenChange={(open) => !open && setConfirmDeleteColumnId(null)}
+        title="Delete Column"
+        message="Are you sure you want to delete this column and all its tasks? This action cannot be undone."
+        confirmLabel="Delete Column"
+        onConfirm={() => confirmDeleteColumnId !== null && deleteColumnMutation.mutate(confirmDeleteColumnId)}
       />
     </div>
   );

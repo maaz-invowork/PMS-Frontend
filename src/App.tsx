@@ -24,18 +24,15 @@ export function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/:projectId" element={<BoardViewPage />} />
               <Route path="/projects/:projectId/boards/:boardId" element={<BoardViewPage />} />
             </Route>
 
-            {/* Default Catch-all */}
             <Route path="*" element={<Navigate to="/projects" replace />} />
           </Routes>
         </BrowserRouter>

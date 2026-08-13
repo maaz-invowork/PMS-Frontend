@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PriorityLevel, Task, UserMinimal } from '../../types';
 import { Loader2, Trash2, Edit3, Calendar, User as UserIcon, CheckCircle2 } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -33,6 +34,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onDelete,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
@@ -72,21 +74,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      setLoading(true);
-      try {
-        await onDelete(task.id);
-        onOpenChange(false);
-      } catch (err) {
-        console.error('Failed to delete task:', err);
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      await onDelete(task.id);
+      onOpenChange(false);
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800 text-slate-100">
         <DialogHeader>
           <div className="flex items-center justify-between gap-2 pr-6">
@@ -119,7 +120,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setIsConfirmDeleteOpen(true)}
                 className="text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
               >
                 <Trash2 className="w-4 h-4" />
@@ -251,6 +252,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           )}
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      <ConfirmModal
+        open={isConfirmDeleteOpen}
+        onOpenChange={setIsConfirmDeleteOpen}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirmLabel="Delete Task"
+        onConfirm={handleDelete}
+        loading={loading}
+      />
+    </>
   );
 };

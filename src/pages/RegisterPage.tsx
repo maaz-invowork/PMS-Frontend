@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Card, CardContent} from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Lock, User, Mail, AlertCircle, ArrowRight, Loader2, Type } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
@@ -41,7 +41,6 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      {/* Background decorative gradients */}
       <div className="absolute top-1/4 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -50,7 +49,7 @@ export const RegisterPage: React.FC = () => {
           <div className='flex justify-center items-center'>
             <img src="/logo.png" className="w-42" alt="Logo" />
           </div>
-          
+
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Create Account</h1>
           <p className="text-sm text-slate-400">Sign up to get started</p>
         </div>

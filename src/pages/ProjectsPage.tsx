@@ -6,6 +6,7 @@ import { Navbar } from '../components/Navbar';
 import { ProjectCard } from '../components/ProjectCard';
 import { CreateProjectModal } from '../components/modals/CreateProjectModal';
 import { ManageMembersModal } from '../components/modals/ManageMembersModal';
+import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { FolderPlus, Search, Loader2, FolderKanban } from 'lucide-react';
@@ -14,16 +15,15 @@ export const ProjectsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProjectForMembers, setSelectedProjectForMembers] = useState<Project | null>(null);
+  const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
 
-  // Fetch projects list
   const { data: projects = [], isLoading, error } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: projectsApi.list,
   });
 
-  // Create Project mutation
   const createProjectMutation = useMutation({
     mutationFn: (data: { title: string; description?: string }) => projectsApi.create(data),
     onSuccess: () => {
@@ -31,7 +31,6 @@ export const ProjectsPage: React.FC = () => {
     },
   });
 
-  // Delete Project mutation
   const deleteProjectMutation = useMutation({
     mutationFn: (id: number) => projectsApi.delete(id),
     onSuccess: () => {
@@ -39,7 +38,6 @@ export const ProjectsPage: React.FC = () => {
     },
   });
 
-  // Add Members mutation
   const addMembersMutation = useMutation({
     mutationFn: ({ projectId, userIds }: { projectId: number; userIds: number[] }) =>
       projectsApi.addMembers(projectId, userIds),
@@ -48,7 +46,6 @@ export const ProjectsPage: React.FC = () => {
     },
   });
 
-  // Remove Member mutation
   const removeMemberMutation = useMutation({
     mutationFn: ({ projectId, userId }: { projectId: number; userId: number }) =>
       projectsApi.removeMembers(projectId, [userId]),
@@ -61,10 +58,8 @@ export const ProjectsPage: React.FC = () => {
     await createProjectMutation.mutateAsync({ title, description: description || undefined });
   };
 
-  const handleDeleteProject = async (id: number) => {
-    if (confirm('Are you sure you want to delete this project? All associated boards will be removed.')) {
-      await deleteProjectMutation.mutateAsync(id);
-    }
+  const handleDeleteProject = (id: number) => {
+    setConfirmDeleteProjectId(id);
   };
 
   const filteredProjects = projects.filter((p) =>
@@ -77,10 +72,9 @@ export const ProjectsPage: React.FC = () => {
       <Navbar onOpenCreateProject={() => setIsCreateOpen(true)} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Banner / Title Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">
+            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-blue-400 mb-1">
               <span>Project Dashboard</span>
             </div>
             <p className="text-sm text-slate-400 mt-1">
@@ -109,7 +103,6 @@ export const ProjectsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Content State */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -154,7 +147,6 @@ export const ProjectsPage: React.FC = () => {
         )}
       </main>
 
-      {/* Modals */}
       <CreateProjectModal
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
@@ -167,7 +159,6 @@ export const ProjectsPage: React.FC = () => {
         onOpenChange={(open) => !open && setSelectedProjectForMembers(null)}
         onAddMembers={async (projId, userIds) => {
           await addMembersMutation.mutateAsync({ projectId: projId, userIds });
-          // Update local modal project reference
           const updated = projects.find((p) => p.id === projId);
           if (updated) setSelectedProjectForMembers({ ...updated });
         }}
@@ -175,6 +166,19 @@ export const ProjectsPage: React.FC = () => {
           await removeMemberMutation.mutateAsync({ projectId: projId, userId });
           const updated = projects.find((p) => p.id === projId);
           if (updated) setSelectedProjectForMembers({ ...updated });
+        }}
+      />
+
+      <ConfirmModal
+        open={confirmDeleteProjectId !== null}
+        onOpenChange={(open) => !open && setConfirmDeleteProjectId(null)}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? All associated boards will be removed. This action cannot be undone."
+        confirmLabel="Delete Project"
+        onConfirm={async () => {
+          if (confirmDeleteProjectId !== null) {
+            await deleteProjectMutation.mutateAsync(confirmDeleteProjectId);
+          }
         }}
       />
     </div>

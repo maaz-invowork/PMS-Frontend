@@ -1,15 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Project, UserMinimal } from '../../types';
 import { Loader2, Users, Search, Check, UserMinus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { api } from '../../lib/api';
+import { api, projectsApi } from '../../lib/api';
 
 interface ManageMembersModalProps {
   project: Project | null;
-  allUsers?: UserMinimal[]; // Optional: pass externally or allow modal to fetch automatically
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddMembers: (projectId: number, userIds: number[]) => Promise<void>;
@@ -18,31 +17,24 @@ interface ManageMembersModalProps {
 
 export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
   project,
-  allUsers: externalUsers,
   open,
   onOpenChange,
   onAddMembers,
   onRemoveMember,
 }) => {
-  // ---------------------------------------------------------------------------
-  // 1. HOOKS
-  // ---------------------------------------------------------------------------
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingUsers, setFetchingUsers] = useState(false);
-  const [internalUsers, setInternalUsers] = useState<UserMinimal[]>([]);
+  const [users, setUsers] = useState<UserMinimal[]>([]);
   const [localMembers, setLocalMembers] = useState<UserMinimal[]>([]);
   const [error, setError] = useState('');
 
-  // Sync local members whenever project prop updates
   useEffect(() => {
-    if (project?.members) {
-      setLocalMembers(project.members);
-    } else {
-      setLocalMembers([]);
+    if (open && project) {
+      setLocalMembers(project.members || []);
     }
-  }, [project?.members]);
+  }, [open, project?.id]);
 
   // Fetch assignable members automatically when the modal opens
   useEffect(() => {
@@ -55,12 +47,11 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
     }
 
     const fetchAssignableUsers = async () => {
-      if (externalUsers && externalUsers.length > 0) return;
 
       setFetchingUsers(true);
       try {
-        const response = await api.get<UserMinimal[]>('/projects/members');
-        setInternalUsers(response.data);
+        const response = await projectsApi.fetchUsers();
+        setUsers(response);
       } catch (err: any) {
         console.error('Failed to fetch available users:', err);
         setError('Failed to load user list.');
@@ -70,9 +61,9 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
     };
 
     fetchAssignableUsers();
-  }, [open, externalUsers]);
+  }, [open]);
 
-  const usersToFilter = externalUsers && externalUsers.length > 0 ? externalUsers : internalUsers;
+  const usersToFilter = users;
 
   // Extract existing member IDs for fast lookup using localMembers state
   const existingMemberIds = useMemo(() => {
@@ -100,14 +91,8 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
       });
   }, [usersToFilter, existingMemberIds, searchQuery, project]);
 
-  // ---------------------------------------------------------------------------
-  // 2. CONDITIONAL RETURN
-  // ---------------------------------------------------------------------------
   if (!project) return null;
 
-  // ---------------------------------------------------------------------------
-  // 3. HANDLERS & HELPERS
-  // ---------------------------------------------------------------------------
   const toggleUserSelection = (userId: number) => {
     setSelectedUserIds((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
@@ -162,16 +147,13 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
       .slice(0, 2);
   };
 
-  // ---------------------------------------------------------------------------
-  // 4. RENDER
-  // ---------------------------------------------------------------------------
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <Users className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <Users className="w-4 h-4" />
             </div>
             <DialogTitle className="text-xl font-bold">Manage Project Members</DialogTitle>
           </div>
@@ -219,11 +201,10 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
                     <div
                       key={user.id}
                       onClick={() => toggleUserSelection(user.id)}
-                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
-                        isSelected
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${isSelected
                           ? 'bg-blue-600/20 border border-blue-500/40 text-white'
                           : 'hover:bg-slate-800/50 text-slate-300'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Avatar className="w-6 h-6 bg-slate-800 text-slate-200 text-[10px]">
@@ -236,11 +217,10 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
                       </div>
 
                       <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center ${
-                          isSelected
+                        className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected
                             ? 'bg-blue-600 border-blue-500 text-white'
                             : 'border-slate-700 bg-slate-900'
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3" />}
                       </div>
@@ -273,24 +253,10 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
           {/* Current Members List */}
           <div className="space-y-2 pt-2 border-t border-slate-800/80">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Current Members ({localMembers.length + 1})
+              Current Members ({localMembers.length})
             </span>
 
             <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-              {/* Owner */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/40 border border-slate-800/80">
-                <div className="flex items-center gap-2.5">
-                  <Avatar className="w-7 h-7 bg-blue-600 text-white font-bold text-xs">
-                    <AvatarFallback>{getInitials(project.owner?.full_name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="text-xs font-semibold text-slate-200">
-                      {project.owner?.full_name || project.owner?.username}
-                    </div>
-                    <div className="text-[10px] text-blue-400 font-medium">Project Owner</div>
-                  </div>
-                </div>
-              </div>
 
               {/* Members */}
               {localMembers.length > 0 ? (

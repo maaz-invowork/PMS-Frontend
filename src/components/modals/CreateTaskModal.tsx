@@ -71,11 +71,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800 text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <CheckSquare className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <CheckSquare className="w-4 h-4" />
             </div>
-            <DialogTitle className="text-xl font-bold">
-              Add Task {columnName ? `to "${columnName}"` : ''}
+            <DialogTitle className="text-xl mt-1 font-semibold">
+              Add Task
             </DialogTitle>
           </div>
           <DialogDescription className="text-slate-400">
@@ -120,10 +120,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   <SelectValue placeholder="Select Priority" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  <SelectItem value="low">Low Priority</SelectItem>
-                  <SelectItem value="medium">Medium Priority</SelectItem>
-                  <SelectItem value="high">High Priority</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="low" className="text-green-400 hover:bg-green-500/20  focus:bg-green-500/20 focus:text-green-300">Low</SelectItem>
+                  <SelectItem value="medium" className="text-yellow-400 focus:bg-yellow-500/20 focus:text-yellow-300">Medium</SelectItem>
+                  <SelectItem value="high" className="text-orange-400 focus:bg-orange-500/20 focus:text-orange-300">High</SelectItem>
+                  <SelectItem value="urgent" className="text-red-400 focus:bg-red-500/20 focus:text-red-300">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -160,7 +160,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             />
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 bg-transparent border-0">
             <Button
               type="button"
               variant="ghost"

@@ -40,10 +40,10 @@ export const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all">
-      <div className="max-w-7xl px-4 pr-8  h-16 flex items-center justify-between">
-         <div>
-            <img src="/logo.png" className="w-26" alt="Logo" />
-          </div>
+      <div className="px-4 pr-8 h-16 flex items-center justify-between">
+        <div>
+          <img src="/logo.png" className="w-30" alt="Logo" />
+        </div>
 
         <div className="flex items-center gap-4">
 
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="flex items-center gap-2 text-red-500 hover:bg-red-500/10 cursor-pointer rounded-md px-2 py-1.5 text-sm font-medium"
+                      className="flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5 text-sm font-medium text-red-500 hover:text-red-500 focus:text-red-500 hover:bg-red-500/10 focus:bg-red-500/10"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Log Out</span>

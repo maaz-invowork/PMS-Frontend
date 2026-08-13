@@ -4,7 +4,7 @@ import { Project } from '../types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { FolderKanban, ArrowRight, ShieldCheck, MoreVertical, Trash2, Users } from 'lucide-react';
+import { ArrowRight, MoreVertical, Trash2, Users, Folder } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface ProjectCardProps {
@@ -19,7 +19,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  console.log(project);
+  // console.log(project);
   const isOwnerOrAdmin =
     user?.role?.name === 'admin' || user?.id === project.owner?.id;
 
@@ -58,21 +58,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
     >
 
       <div>
-        <CardHeader className="pt-6 pb-3">
+        <CardHeader className="pt-2 pb-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                <FolderKanban className="w-5 h-5" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
+                <Folder className="w-4 h-4" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
+                <CardTitle className="text-lg pt-1 font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
                   {project.title}
                 </CardTitle>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 inline" /> Owner: {project.owner?.full_name || project.owner?.username}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -136,9 +131,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
           {/* Member Avatars */}
           <div className="flex items-center justify-between">
             <div className="flex items-center -space-x-2 overflow-hidden">
-              <Avatar className="w-7 h-7 border-2 border-slate-900 bg-blue-600 text-white font-bold text-[10px]" title={`Owner: ${project.owner?.full_name}`}>
-                <AvatarFallback>{getInitials(project.owner?.full_name)}</AvatarFallback>
-              </Avatar>
               {project.members?.slice(0, 3).map((m) => (
                 <Avatar key={m.id} className="w-7 h-7 border-2 border-slate-900 bg-slate-800 text-slate-200 text-[10px]" title={m.full_name}>
                   <AvatarFallback>{getInitials(m.full_name)}</AvatarFallback>
@@ -150,16 +142,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
                 </div>
               )}
             </div>
-
-
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-blue-300 font-semibold flex items-center gap-1">
+                Owner:
+                <span className='text-slate-200 text-xs font-light'>{project.owner?.full_name}</span>
+              </span>
+            </div>
           </div>
         </CardContent>
       </div>
 
-      <CardFooter className="pt-3 pb-4 bg-transparent border-t border-slate-800/70">
+      <CardFooter className="flex justify-center items-center pt-3 pb-4 bg-transparent border-t border-slate-800/70">
         <Button
           onClick={handleOpenBoard}
-          className="w-full bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white transition-all font-semibold flex items-center justify-center gap-2 group/btn shadow-md"
+          className="w-1/2 py-4 bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white transition-all font-medium flex items-center justify-center gap-2 group/btn shadow-md"
         >
           <span>Open Project</span>
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

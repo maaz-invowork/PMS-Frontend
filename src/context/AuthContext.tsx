@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('pms_token'));
+  const [token, setToken] = useState<string | null>(localStorage.getItem('kinetix_token'));
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = async () => {
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
     } catch (err) {
       console.error('Failed to fetch user:', err);
-      localStorage.removeItem('pms_token');
+      localStorage.removeItem('kinetix_token');
       setToken(null);
       setUser(null);
     } finally {
@@ -44,9 +44,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   const login = async (username: string, password: string) => {
-    const res = await authApi.login(username, password);
-    localStorage.setItem('pms_token', res.access_token);
-    setToken(res.access_token);
+
+    try {
+      const res = await authApi.login(username, password);
+      localStorage.setItem('kinetix_token', res.access_token);
+      setToken(res.access_token);
+
+      const userData = await authApi.getCurrentUser();
+      setUser(userData);
+    }
+    catch (err) {
+      localStorage.removeItem('kinetix_token');
+      setToken(null);
+      setUser(null);
+      throw err;
+    }
   };
 
   const register = async (data: { username: string; email: string; full_name: string; password: string }) => {
@@ -55,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('pms_token');
+    localStorage.removeItem('kinetix_token');
     setToken(null);
     setUser(null);
   };
