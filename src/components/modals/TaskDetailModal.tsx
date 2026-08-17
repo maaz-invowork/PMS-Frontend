@@ -231,8 +231,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          {isEditing ? (
+        <DialogFooter className="bg-transparent border-0">
+          {isEditing && (
             <Button
               onClick={handleSave}
               disabled={loading || !title.trim()}
@@ -240,14 +240,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Save Changes
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white"
-            >
-              Close
             </Button>
           )}
         </DialogFooter>

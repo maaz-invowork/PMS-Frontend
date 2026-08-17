@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, act } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -26,6 +26,7 @@ import { ManageMembersModal } from '../components/modals/ManageMembersModal';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
+import { EditProjectModal } from '../components/modals/EditProjectModal';
 import {
   FolderKanban,
   Plus,
@@ -34,7 +35,9 @@ import {
   Trash2,
   Users,
   Columns3,
+  Pencil,
 } from 'lucide-react';
+import { EditBoardModal } from '@/components/modals/EditBoardModal';
 
 export const BoardViewPage: React.FC = () => {
   const { projectId, boardId } = useParams<{ projectId: string; boardId?: string }>();
@@ -60,6 +63,9 @@ export const BoardViewPage: React.FC = () => {
     open: false,
     columnId: null,
   });
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(false);
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+  const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -81,6 +87,7 @@ export const BoardViewPage: React.FC = () => {
     enabled: !isNaN(parsedProjectId),
   });
 
+
   // Determine current active board
   const activeBoard = useMemo(() => {
     if (parsedBoardId) {
@@ -90,28 +97,19 @@ export const BoardViewPage: React.FC = () => {
   }, [boards, parsedBoardId]);
 
   // Fetch Columns for active board
-  const { data: fetchedColumns = [], isLoading: isColumnsLoading } = useQuery<BoardColumn[]>({
+  const { data: fetchedColumns, isLoading: isColumnsLoading } = useQuery<BoardColumn[]>({
     queryKey: ['columns', activeBoard?.id],
     queryFn: () => columnsApi.listByBoard(activeBoard!.id),
     enabled: !!activeBoard?.id,
   });
 
   useEffect(() => {
-  if (fetchedColumns && fetchedColumns.length > 0) {
-    // Only update if columns local state is empty or when active board switches
-    setColumns(fetchedColumns);
-  }
-}, [activeBoard?.id]); // Depend on activeBoard.id instead of fetchedColumns reference
+    if (fetchedColumns) {
+      setColumns(fetchedColumns);
+    }
+  }, [fetchedColumns]);
 
-const firstBoardId = boards[0]?.id;
-
-useEffect(() => {
-  if (!boardId && firstBoardId) {
-    navigate(`/projects/${projectId}/boards/${firstBoardId}`, { replace: true });
-  }
-}, [boardId, firstBoardId, projectId, navigate]);
-
-  // Column / Board / Task Mutations
+  // Mutations
   const createBoardMutation = useMutation({
     mutationFn: (name: string) => boardsApi.create({ name, project_id: parsedProjectId }),
     onSuccess: (newBoard) => {
@@ -119,6 +117,15 @@ useEffect(() => {
       navigate(`/projects/${parsedProjectId}/boards/${newBoard.id}`);
     },
   });
+
+  const updateBoardMutation = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      boardsApi.update(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+    },
+  });
+
 
   const deleteBoardMutation = useMutation({
     mutationFn: (id: number) => boardsApi.delete(id),
@@ -183,6 +190,23 @@ useEffect(() => {
       projectsApi.removeMembers(pId, [userId]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', parsedProjectId] });
+    },
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ id, title, description }: { id: number; title: string; description?: string }) =>
+      projectsApi.update(id, { title, description }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+    },
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: (id: number) => projectsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setConfirmDeleteProject(false);
+      navigate('/projects');
     },
   });
 
@@ -335,16 +359,10 @@ useEffect(() => {
     }
   };
 
-  const allMembers = useMemo(() => {
-    if (!project) return [];
-    return [project.owner, ...project.members];
-  }, [project]);
-
   if (isProjectLoading || isBoardsLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center gap-3 text-slate-300">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <p className="text-sm font-medium">Loading board workspace...</p>
       </div>
     );
   }
@@ -376,6 +394,50 @@ useEffect(() => {
           </div>
 
           <div className="flex items-center gap-3">
+
+            {activeBoard && isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDeleteProject(true)}
+                className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10  border-2 border-rose-500/30 text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Project
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditProjectOpen(true)}
+              className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 border-2 border-blue-500/30 text-xs"
+            >
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Edit Project
+            </Button>
+
+
+            {activeBoard && isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDeleteBoard(true)}
+                className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10  border-2 border-rose-500/30 text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Board
+              </Button>
+            )}
+
+            {activeBoard && isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditBoardOpen(true)}
+                className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10  border-2 border-blue-500/30 text-xs"
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Edit Board
+              </Button>
+            )}
+
+
             {isOwner && (
               <Button
                 variant="ghost"
@@ -384,17 +446,6 @@ useEffect(() => {
                 className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 border-2 border-blue-500/30 text-xs"
               >
                 <Users className="w-3.5 h-3.5 mr-1" /> Manage Members
-              </Button>
-            )}
-
-            {activeBoard && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmDeleteBoard(true)}
-                className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10  border-2 border-rose-500/30 text-xs"
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Board
               </Button>
             )}
 
@@ -418,8 +469,8 @@ useEffect(() => {
               key={b.id}
               to={`/projects/${parsedProjectId}/boards/${b.id}`}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeBoard?.id === b.id
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               {b.name}
@@ -438,7 +489,7 @@ useEffect(() => {
       </div>
 
       {/* Main Kanban Board Canvas */}
-      <main className="flex-1 p-6 overflow-x-auto">
+      <main className="flex-1 p-0 overflow-x-auto mx-4">
         {!activeBoard ? (
           <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 border border-slate-800/80 rounded-2xl max-w-lg mx-auto text-center space-y-4">
             <FolderKanban className="w-12 h-12 text-slate-600" />
@@ -448,12 +499,6 @@ useEffect(() => {
                 Create a board for this project to start organizing tasks with kanban columns.
               </p>
             </div>
-            <Button
-              onClick={() => setIsCreateBoardOpen(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Create First Board
-            </Button>
           </div>
         ) : isColumnsLoading ? (
           <div className="flex items-center justify-center py-20 gap-3">
@@ -467,8 +512,8 @@ useEffect(() => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex items-start gap-5 min-h-[calc(100vh-16rem)] pb-8">
-              <SortableContext items={columnIds}>
+            <div className="flex items-start gap-4 pt-4 pb-6">
+              <SortableContext items={columnIds} >
                 {columns.map((col) => (
                   <ColumnContainer
                     key={col.id}
@@ -495,9 +540,7 @@ useEffect(() => {
                     <div className="space-y-1">
                       <h3 className="text-base font-bold text-slate-200">No Columns Yet</h3>
                       <p className="text-xs text-slate-400 leading-relaxed">
-                        You don't have any columns created.<br />
-                        Kindly create a column by clicking the{' '}
-                        <span className="text-blue-400 font-semibold">Add Column</span>
+                        Create a Column inside this board to start organizing tasks.
                       </p>
                     </div>
                   </div>
@@ -544,7 +587,7 @@ useEffect(() => {
         open={createTaskModal.open}
         columnId={createTaskModal.columnId}
         columnName={createTaskModal.columnName}
-        members={allMembers}
+        members={project?.members}
         onOpenChange={(open) =>
           setCreateTaskModal((prev) => ({ ...prev, open }))
         }
@@ -556,7 +599,7 @@ useEffect(() => {
       <TaskDetailModal
         task={selectedTask}
         open={!!selectedTask}
-        members={allMembers}
+        members={project?.members}
         onOpenChange={(open) => !open && setSelectedTask(null)}
         onUpdate={async (taskId, data) => {
           await updateTaskMutation.mutateAsync({ id: taskId, data });
@@ -565,6 +608,35 @@ useEffect(() => {
         onDelete={async (taskId) => {
           await deleteTaskMutation.mutateAsync(taskId);
           setSelectedTask(null);
+        }}
+      />
+
+      <EditProjectModal
+        project={project ?? null}
+        open={isEditProjectOpen}
+        onOpenChange={setIsEditProjectOpen}
+        onSubmit={async (title, description) => {
+          if (project) {
+            await updateProjectMutation.mutateAsync({
+              id: project.id,
+              title,
+              description,
+            });
+          }
+        }}
+      />
+
+      <EditBoardModal
+        board={activeBoard ?? null}
+        open={isEditBoardOpen}
+        onOpenChange={setIsEditBoardOpen}
+        onUpdateBoard={async (name) => {
+          if (activeBoard) {
+            await updateBoardMutation.mutateAsync({
+              id: activeBoard.id,
+              name
+            });
+          }
         }}
       />
 
@@ -596,6 +668,14 @@ useEffect(() => {
         message="Are you sure you want to delete this column and all its tasks? This action cannot be undone."
         confirmLabel="Delete Column"
         onConfirm={() => confirmDeleteColumnId !== null && deleteColumnMutation.mutate(confirmDeleteColumnId)}
+      />
+      <ConfirmModal
+        open={confirmDeleteProject}
+        onOpenChange={setConfirmDeleteProject}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${project?.title}"? All associated boards will be removed. This action cannot be undone.`}
+        confirmLabel="Delete Project"
+        onConfirm={() => deleteProjectMutation.mutate(parsedProjectId)}
       />
     </div>
   );

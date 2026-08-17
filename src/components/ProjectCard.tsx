@@ -4,16 +4,17 @@ import { Project } from '../types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { ArrowRight, MoreVertical, Trash2, Users, Folder } from 'lucide-react';
+import { ArrowRight, MoreVertical, Trash2, Users, Folder, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface ProjectCardProps {
   project: Project;
   onDelete?: (id: number) => void;
+  onEdit?: (project: Project) => void;
   onManageMembers?: (project: Project) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onManageMembers }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onEdit, onManageMembers }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,11 +36,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
   }, [menuOpen]);
 
   const handleOpenBoard = () => {
-    if (project.boards && project.boards.length > 0) {
-      navigate(`/projects/${project.id}/boards/${project.boards[0].id}`);
-    } else {
-      navigate(`/projects/${project.id}`);
-    }
+    navigate(`/projects/${project.id}`);
   };
 
   const getInitials = (name?: string) => {
@@ -71,7 +68,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
               </div>
             </div>
 
-            {isOwnerOrAdmin && (onDelete || onManageMembers) && (
+            {isOwnerOrAdmin && (onDelete || onManageMembers || onEdit) && (
               <div className="relative" ref={menuRef}>
                 <Button
                   variant="ghost"
@@ -101,6 +98,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onM
                       >
                         <Users className="w-4 h-4 text-blue-400" />
                         Manage Members
+                      </button>
+                    )}
+
+                    {onEdit && (
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onEdit(project);
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-blue-400 hover:bg-slate-800/80 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4 text-blue-400" />
+                        Edit Project
                       </button>
                     )}
                     {onDelete && (

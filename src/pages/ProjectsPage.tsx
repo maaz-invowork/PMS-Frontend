@@ -10,12 +10,14 @@ import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { FolderPlus, Search, Loader2, FolderKanban } from 'lucide-react';
+import { EditProjectModal } from '../components/modals/EditProjectModal';
 
 export const ProjectsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProjectForMembers, setSelectedProjectForMembers] = useState<Project | null>(null);
   const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<number | null>(null);
+  const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<Project | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -53,6 +55,14 @@ export const ProjectsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
+
+  const updateProjectMutation = useMutation({
+  mutationFn: ({ id, title, description }: { id: number; title: string; description?: string }) =>
+    projectsApi.update(id, { title, description }),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+  },
+});
 
   const handleCreateProject = async (title: string, description: string) => {
     await createProjectMutation.mutateAsync({ title, description: description || undefined });
@@ -139,6 +149,7 @@ export const ProjectsPage: React.FC = () => {
               <ProjectCard
                 key={project.id}
                 project={project}
+                onEdit={(proj) => setSelectedProjectForEdit(proj)}
                 onDelete={handleDeleteProject}
                 onManageMembers={(proj) => setSelectedProjectForMembers(proj)}
               />
@@ -151,6 +162,21 @@ export const ProjectsPage: React.FC = () => {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onSubmit={handleCreateProject}
+      />
+
+      <EditProjectModal
+        project={selectedProjectForEdit}
+        open={!!selectedProjectForEdit}
+        onOpenChange={(open) => !open && setSelectedProjectForEdit(null)}
+        onSubmit={async (title, description) => {
+          if (selectedProjectForEdit) {
+            await updateProjectMutation.mutateAsync({
+              id: selectedProjectForEdit.id,
+              title,
+              description,
+            });
+          }
+        }}
       />
 
       <ManageMembersModal
@@ -168,6 +194,8 @@ export const ProjectsPage: React.FC = () => {
           if (updated) setSelectedProjectForMembers({ ...updated });
         }}
       />
+
+
 
       <ConfirmModal
         open={confirmDeleteProjectId !== null}

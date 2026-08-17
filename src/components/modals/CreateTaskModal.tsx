@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PriorityLevel, UserMinimal } from '../../types';
-import { Loader2, CheckSquare } from 'lucide-react';
+import { CustomDatePicker } from '../../components/ui/datePicker';
+import {
+  Loader2,
+  CheckSquare,
+  X,
+} from 'lucide-react';
 
+
+
+// Main Modal Component
 interface CreateTaskModalProps {
   open: boolean;
   columnId: number | null;
@@ -36,6 +44,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [dueDate, setDueDate] = useState('');
   const [assigneeId, setAssigneeId] = useState<string>('unassigned');
   const [loading, setLoading] = useState(false);
+  const selectedMember = members.find((m) => m.id.toString() === assigneeId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +84,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               <CheckSquare className="w-4 h-4" />
             </div>
             <DialogTitle className="text-xl mt-1 font-semibold">
-              Add Task
+              Add Task {columnName && <span className="text-slate-400 text-sm font-normal">in {columnName}</span>}
             </DialogTitle>
           </div>
           <DialogDescription className="text-slate-400">
@@ -120,10 +129,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   <SelectValue placeholder="Select Priority" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  <SelectItem value="low" className="text-green-400 hover:bg-green-500/20  focus:bg-green-500/20 focus:text-green-300">Low</SelectItem>
-                  <SelectItem value="medium" className="text-yellow-400 focus:bg-yellow-500/20 focus:text-yellow-300">Medium</SelectItem>
-                  <SelectItem value="high" className="text-orange-400 focus:bg-orange-500/20 focus:text-orange-300">High</SelectItem>
-                  <SelectItem value="urgent" className="text-red-400 focus:bg-red-500/20 focus:text-red-300">Urgent</SelectItem>
+                  <SelectItem value="low" className="text-green-400 focus:text-green-500 focus:bg-green-300/80">Low</SelectItem>
+                  <SelectItem value="medium" className="text-yellow-400 focus:text-yellow-500 focus:bg-yellow-200/80">Medium</SelectItem>
+                  <SelectItem value="high" className="text-orange-400 focus:text-orange-500 focus:bg-orange-300/80">High</SelectItem>
+                  <SelectItem value="urgent" className="text-red-400 focus:text-red-500 focus:bg-red-300/80">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -134,15 +143,44 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               </label>
               <Select value={assigneeId} onValueChange={(val) => setAssigneeId(val || 'unassigned')}>
                 <SelectTrigger className="bg-slate-950/60 border-slate-800 text-slate-100">
-                  <SelectValue placeholder="Unassigned" />
+                  <SelectValue placeholder="Unassigned">
+                    {selectedMember ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {(selectedMember.full_name || selectedMember.username).charAt(0).toUpperCase()}
+                        </div>
+                        <span className="truncate">{selectedMember.full_name || selectedMember.username}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">Unassigned</span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
+
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id.toString()}>
-                      {m.full_name || m.username}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="unassigned">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] shrink-0">
+                        ?
+                      </div>
+                      <span>Unassigned</span>
+                    </div>
+                  </SelectItem>
+
+                  {members.map((m) => {
+                    const name = m.full_name || m.username;
+                    const initial = name.charAt(0).toUpperCase();
+                    return (
+                      <SelectItem key={m.id} value={m.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {initial}
+                          </div>
+                          <span>{name}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -152,12 +190,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
               Due Date
             </label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100"
-            />
+            <CustomDatePicker value={dueDate} onChange={(val) => setDueDate(val)} />
           </div>
 
           <DialogFooter className="pt-2 bg-transparent border-0">
