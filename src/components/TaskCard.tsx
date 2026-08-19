@@ -37,7 +37,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
       <div
         ref={setNodeRef}
         style={style}
-        className="w-full h-24 rounded-xl bg-slate-900/40 border-2 border-dashed border-blue-500/50 opacity-40"
+        className="w-full h-32 rounded-xl bg-slate-900/40 border-2 border-dashed border-blue-500/50 opacity-40"
       />
     );
   }
@@ -71,7 +71,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
       ref={setNodeRef}
       style={style}
       onClick={() => onClickTask && onClickTask(task)}
-      className="group relative w-full bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-3.5 shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer space-y-2.5"
+      className="group relative w-full bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-3.5 shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer space-y-4"
     >
       {/* Header: Grip + Title + Priority */}
       <div className="flex items-start justify-between gap-2">

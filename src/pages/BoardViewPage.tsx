@@ -231,12 +231,14 @@ export const BoardViewPage: React.FC = () => {
     }
   };
 
-const parseId = (id: string | number | undefined): number | null => {
-  if (id === undefined || id === null) return null;
-  if (typeof id === 'number') return id;
-  const parts = id.toString().split('-');
-  return Number(parts[parts.length - 1]);
-};
+
+  const parseId = (id: string | number | undefined): number | null => {
+    if (id === undefined || id === null) return null;
+    if (typeof id === 'number') return id;
+    const parts = id.toString().split('-');
+    const parsed = Number(parts[parts.length - 1]);
+    return isNaN(parsed) ? null : parsed;
+  };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
@@ -271,7 +273,11 @@ const parseId = (id: string | number | undefined): number | null => {
           (t) => t.id === overId
         );
 
-        const newCols = [...prevCols];
+        // Deep clone column objects and task arrays
+        const newCols = prevCols.map((col) => ({
+          ...col,
+          tasks: [...col.tasks],
+        }));
 
         if (activeColumnIndex !== overColumnIndex) {
           const [movedTask] = newCols[activeColumnIndex].tasks.splice(activeTaskIndex, 1);
@@ -305,7 +311,12 @@ const parseId = (id: string | number | undefined): number | null => {
           (t) => t.id === activeId
         );
 
-        const newCols = [...prevCols];
+        // Deep clone column objects and task arrays
+        const newCols = prevCols.map((col) => ({
+          ...col,
+          tasks: [...col.tasks],
+        }));
+
         const [movedTask] = newCols[activeColumnIndex].tasks.splice(activeTaskIndex, 1);
         movedTask.column_id = newCols[overColumnIndex].id;
         newCols[overColumnIndex].tasks.push(movedTask);
@@ -325,7 +336,7 @@ const parseId = (id: string | number | undefined): number | null => {
     const activeId = parseId(active.id);
     const overId = parseId(over.id);
 
-    if (activeId === null || overId === null) return;    
+    if (activeId === null || overId === null) return;
 
     // Handle Column Drag Reorder
     if (active.data.current?.type === 'Column' && activeId !== overId) {

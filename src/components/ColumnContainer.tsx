@@ -34,7 +34,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [columnName, setColumnName] = useState(column.name);
 
-  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+  const taskIds = useMemo(() => tasks.map((t) => `task-${t.id}`), [tasks]);
 
   const {
     setNodeRef,
@@ -66,7 +66,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
       <div
         ref={setNodeRef}
         style={style}
-        className="w-60 min-w-[20rem] max-w-[20rem] h-auto min-h-[350px] rounded-2xl bg-slate-900/30 border-2 border-dashed border-indigo-500/50 opacity-40 mt-4"
+        className="w-60 min-w-[20rem] max-w-[20rem] h-auto min-h-[350px] rounded-2xl bg-slate-900/30 border-2 border-dashed border-blue-500/50 opacity-40 mt-4"
       />
     );
   }
@@ -111,7 +111,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
                 render={
                   <button
                     type="button"
-                    className="mt-[2.5px] text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-slate-800/80 transition-colors"
+                    className="mt-[0.5px] text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-slate-800/80 transition-colors"
                     title="Column options"
                   >
                     <MoreVertical className="w-3.5 h-3.5" />

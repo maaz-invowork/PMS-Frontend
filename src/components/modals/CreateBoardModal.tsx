@@ -59,7 +59,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
               placeholder="e.g. Sprint 1, Backlog, Development"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-slate-950/60 border-slate-800 focus:border-indigo-500 text-slate-100 placeholder:text-slate-500"
+              className="bg-slate-950/60 border-slate-800 focus:border-blue-500 text-slate-100 placeholder:text-slate-500"
             />
           </div>
 
