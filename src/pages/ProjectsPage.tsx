@@ -9,7 +9,7 @@ import { ManageMembersModal } from '../components/modals/ManageMembersModal';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { FolderPlus, Search, Loader2, FolderKanban } from 'lucide-react';
+import { FolderPlus, Search, Loader2, Folder } from 'lucide-react';
 import { EditProjectModal } from '../components/modals/EditProjectModal';
 
 export const ProjectsPage: React.FC = () => {
@@ -57,12 +57,12 @@ export const ProjectsPage: React.FC = () => {
   });
 
   const updateProjectMutation = useMutation({
-  mutationFn: ({ id, title, description }: { id: number; title: string; description?: string }) =>
-    projectsApi.update(id, { title, description }),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['projects'] });
-  },
-});
+    mutationFn: ({ id, title, description }: { id: number; title: string; description?: string }) =>
+      projectsApi.update(id, { title, description }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
 
   const handleCreateProject = async (title: string, description: string) => {
     await createProjectMutation.mutateAsync({ title, description: description || undefined });
@@ -105,7 +105,7 @@ export const ProjectsPage: React.FC = () => {
 
             <Button
               onClick={() => setIsCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-2 shrink-0 shadow-lg shadow-blue-600/20"
+              className="bg-blue-500 hover:bg-blue-500/90 text-white font-semibold flex items-center gap-2 shrink-0 shadow-lg shadow-blue-600/20"
             >
               <FolderPlus className="w-4 h-4" />
               <span className="hidden sm:inline">New Project</span>
@@ -125,7 +125,7 @@ export const ProjectsPage: React.FC = () => {
         ) : filteredProjects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <FolderKanban className="w-8 h-8" />
+              <Folder className="w-8 h-8" />
             </div>
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-slate-200">No Projects Found</h3>
@@ -135,13 +135,6 @@ export const ProjectsPage: React.FC = () => {
                   : "You haven't created or joined any projects yet."}
               </p>
             </div>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-2"
-            >
-              <FolderPlus className="w-4 h-4" />
-              <span>Create Project</span>
-            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

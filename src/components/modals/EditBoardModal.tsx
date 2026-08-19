@@ -72,7 +72,7 @@ export const EditBoardModal: React.FC<EditBoardModalProps> = ({
                         <Button
                             type="submit"
                             disabled={!boardName.trim()}
-                            className="bg-blue-600 hover:bg-blue-500 text-white"
+                            className="bg-blue-500 hover:bg-blue-500/90 text-white"
                         >
                             Save Changes
                         </Button>

@@ -134,7 +134,7 @@ export const RegisterPage: React.FC = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 shadow-lg shadow-blue-600/25 transition-all mt-2"
+                className="w-full bg-blue-500 hover:bg-blue-500/90 text-white font-semibold py-2.5 shadow-lg shadow-blue-600/25 transition-all mt-2"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">

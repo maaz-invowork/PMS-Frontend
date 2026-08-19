@@ -213,7 +213,7 @@ export const BoardViewPage: React.FC = () => {
   const isOwner = !!(currentUser && project && currentUser.id === project.owner?.id);
 
   // Column IDs for SortableContext
-  const columnIds = useMemo(() => columns.map((c) => c.id), [columns]);
+  const columnIds = useMemo(() => columns.map((c) => `column-${c.id}`), [columns]);
 
   // Drag and Drop Handlers
   const handleDragStart = (event: DragStartEvent) => {
@@ -231,12 +231,19 @@ export const BoardViewPage: React.FC = () => {
     }
   };
 
+const parseId = (id: string | number | undefined): number | null => {
+  if (id === undefined || id === null) return null;
+  if (typeof id === 'number') return id;
+  const parts = id.toString().split('-');
+  return Number(parts[parts.length - 1]);
+};
+
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = parseId(active.id);
+    const overId = parseId(over.id);
 
     if (activeId === overId) return;
 
@@ -315,8 +322,10 @@ export const BoardViewPage: React.FC = () => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = parseId(active.id);
+    const overId = parseId(over.id);
+
+    if (activeId === null || overId === null) return;    
 
     // Handle Column Drag Reorder
     if (active.data.current?.type === 'Column' && activeId !== overId) {
@@ -453,7 +462,7 @@ export const BoardViewPage: React.FC = () => {
               onClick={() => setIsCreateColumnOpen(true)}
               disabled={!activeBoard}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center gap-1.5 shadow-md"
+              className="bg-blue-500 hover:bg-blue-500/90 text-white font-semibold flex items-center gap-1.5 shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Add Column</span>
@@ -469,7 +478,7 @@ export const BoardViewPage: React.FC = () => {
               key={b.id}
               to={`/projects/${parsedProjectId}/boards/${b.id}`}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${activeBoard?.id === b.id
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                ? 'bg-blue-500 text-black shadow-md shadow-blue-600/20'
                 : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
@@ -491,7 +500,7 @@ export const BoardViewPage: React.FC = () => {
       {/* Main Kanban Board Canvas */}
       <main className="flex-1 p-0 overflow-x-auto mx-4">
         {!activeBoard ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 border border-slate-800/80 rounded-2xl max-w-lg mx-auto text-center space-y-4">
+          <div className="flex flex-col items-center justify-center py-20 bg-slate-900/30 border border-slate-800/80 rounded-2xl max-w-lg mx-auto text-center space-y-4 mt-10">
             <FolderKanban className="w-12 h-12 text-slate-600" />
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-slate-200">No Board Created Yet</h3>

@@ -20,7 +20,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
     transition,
     isDragging,
   } = useSortable({
-    id: task.id,
+    id: `task-${task.id}`,
     data: {
       type: 'Task',
       task,
@@ -47,12 +47,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
       case 'urgent':
         return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
       case 'high':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
       case 'medium':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
       case 'low':
       default:
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/30';
+        return 'bg-green-500/10 text-green-400 border-green-500/30';
     }
   };
 
@@ -125,10 +125,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onClickTask }) => {
 
         {task.assignee ? (
           <div className="flex items-center gap-1.5" title={`Assigned to ${task.assignee.full_name}`}>
-            <Avatar className="w-5 h-5 bg-blue-600 text-white font-semibold">
-              <AvatarFallback className="text-[10px]">{getInitials(task.assignee.full_name)}</AvatarFallback>
+            <Avatar className="w-4 h-4 bg-blue-600 text-white font-semibold">
+              <AvatarFallback className="text-[9px] font-semibold text-black">{getInitials(task.assignee.full_name)}</AvatarFallback>
             </Avatar>
-            <span className="text-[11px] font-medium text-slate-300 max-w-[80px] truncate">
+            <span className="text-[11px] font-normal text-slate-300 max-w-[80px] truncate">
               {task.assignee.full_name.split(' ')[0]}
             </span>
           </div>

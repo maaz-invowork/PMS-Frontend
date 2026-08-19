@@ -165,7 +165,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, onE
       <CardFooter className="flex justify-center items-center pt-3 pb-4 bg-transparent border-t border-slate-800/70">
         <Button
           onClick={handleOpenBoard}
-          className="w-1/2 py-4 bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white transition-all font-medium flex items-center justify-center gap-2 group/btn shadow-md"
+          className="w-1/2 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all font-medium flex items-center justify-center gap-2 group/btn shadow-md"
         >
           <span>Open Project</span>
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

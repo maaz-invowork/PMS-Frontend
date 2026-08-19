@@ -75,7 +75,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
             <Button
               type="submit"
               disabled={loading || !name.trim()}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md"
+              className="bg-blue-500 hover:bg-blue-500/90 text-white font-semibold shadow-md"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

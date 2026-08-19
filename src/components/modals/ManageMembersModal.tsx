@@ -188,7 +188,7 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
             </div>
 
             {/* Available Users Selection List */}
-            <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border border-slate-800/60 rounded-lg p-1.5 bg-slate-950/30">
+            <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border border-slate-800/60 rounded-lg hbg-slate-950/30">
               {fetchingUsers ? (
                 <div className="flex items-center justify-center py-6 text-slate-400 text-xs gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
@@ -202,8 +202,8 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
                       key={user.id}
                       onClick={() => toggleUserSelection(user.id)}
                       className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${isSelected
-                          ? 'bg-blue-600/20 border border-blue-500/40 text-white'
-                          : 'hover:bg-slate-800/50 text-slate-300'
+                        ? 'bg-blue-600/20 border border-blue-500/40 text-white'
+                        : 'hover:bg-slate-800/50 text-slate-300'
                         }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -218,8 +218,8 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
 
                       <div
                         className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'border-slate-700 bg-slate-900'
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'border-slate-700 bg-slate-900'
                           }`}
                       >
                         {isSelected && <Check className="w-3 h-3" />}
@@ -228,9 +228,13 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
                   );
                 })
               ) : (
-                <div className="text-xs text-slate-500 italic text-center py-3">
-                  {searchQuery ? 'No matching users found.' : 'All registered members are already added.'}
+                searchQuery && (
+                <div className="text-xs text-slate-500 italic text-center py-3 flex justify-center items-center">
+                  <p className="text-xs text-slate-500 italic text-center py-3 w-3/4">
+                    No matching users found which is not currently a member of this project.
+                  </p>
                 </div>
+                )
               )}
             </div>
 
@@ -239,7 +243,7 @@ export const ManageMembersModal: React.FC<ManageMembersModalProps> = ({
               <Button
                 onClick={handleAddSelected}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs h-8 mt-1"
+                className="w-full bg-blue-500 hover:bg-blue-500/90 text-white font-semibold text-xs h-8 mt-1"
               >
                 {loading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />

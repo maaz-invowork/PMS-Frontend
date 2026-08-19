@@ -90,7 +90,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <Button
               type="submit"
               disabled={loading || !title.trim()}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md"
+              className="bg-blue-500 hover:bg-blue-500/90 text-white font-semibold shadow-md"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

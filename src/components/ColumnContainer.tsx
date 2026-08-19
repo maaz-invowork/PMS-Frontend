@@ -44,7 +44,7 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
     transition,
     isDragging,
   } = useSortable({
-    id: column.id,
+    id: `column-${column.id}`,
     data: {
       type: 'Column',
       column,
@@ -107,14 +107,17 @@ export const ColumnContainer: React.FC<ColumnContainerProps> = ({
               <Plus className="w-3.5 h-3.5" />
             </button>
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger>
-                <button
-                  className="mt-[2.5px] text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-slate-800/80 transition-colors"
-                  title="Column options"
-                >
-                  <MoreVertical className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    className="mt-[2.5px] text-slate-500 hover:text-slate-300 p-1 rounded hover:bg-slate-800/80 transition-colors"
+                    title="Column options"
+                  >
+                    <MoreVertical className="w-3.5 h-3.5" />
+                  </button>
+                }
+              />
               <DropdownMenuContent align="start" className="w-40 bg-slate-900 text-slate-200 border border-slate-800/80">
                 <DropdownMenuItem
                   onClick={handleOpenEditModal}

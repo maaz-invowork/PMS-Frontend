@@ -1,40 +1,48 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PriorityLevel, UserMinimal } from '../../types';
 import { CustomDatePicker } from '../../components/ui/datePicker';
-import {
-  Loader2,
-  CheckSquare,
-  X,
-} from 'lucide-react';
+import { Loader2, Pencil } from 'lucide-react';
 
-
-
-// Main Modal Component
-interface CreateTaskModalProps {
-  open: boolean;
-  columnId: number | null;
-  columnName?: string;
-  members?: UserMinimal[];
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (taskData: {
-    title: string;
-    description?: string;
-    priority: PriorityLevel;
-    due_date?: string;
-    column_id: number;
-    assignee_id?: number;
-  }) => Promise<void>;
+export interface TaskToEdit {
+  id: number;
+  title: string;
+  description?: string;
+  priority: PriorityLevel;
+  due_date?: string;
+  column_id: number;
+  assignee_id?: number;
 }
 
-export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
+interface EditTaskModalProps {
+  open: boolean;
+  task: TaskToEdit | null;
+  columnName?: string;
+  members?: UserMinimal[];
+  columns?: { id: number; name: string }[];
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (
+    taskId: number,
+    taskData: {
+      title: string;
+      description?: string;
+      priority: PriorityLevel;
+      due_date?: string;
+      column_id: number;
+      assignee_id?: number;
+    }
+  ) => Promise<void>;
+}
+
+export const EditTaskModal: React.FC<EditTaskModalProps> = ({
   open,
-  columnId,
+  task,
   columnName,
   members,
+  columns,
   onOpenChange,
   onSubmit,
 }) => {
@@ -43,16 +51,30 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [dueDate, setDueDate] = useState('');
   const [assigneeId, setAssigneeId] = useState<string>('unassigned');
+  const [columnId, setColumnId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Populate state whenever task changes or modal opens
+  useEffect(() => {
+    if (task && open) {
+      setTitle(task.title || '');
+      setDescription(task.description || '');
+      setPriority(task.priority || 'medium');
+      setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
+      setAssigneeId(task.assignee_id ? task.assignee_id.toString() : 'unassigned');
+      setColumnId(task.column_id);
+    }
+  }, [task, open]);
+
   const selectedMember = members?.find((m) => m.id.toString() === assigneeId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !columnId) return;
+    if (!title.trim() || !task || !columnId) return;
 
     setLoading(true);
     try {
-      await onSubmit({
+      await onSubmit(task.id, {
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
@@ -61,15 +83,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         assignee_id: assigneeId !== 'unassigned' ? Number(assigneeId) : undefined,
       });
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setPriority('medium');
-      setDueDate('');
-      setAssigneeId('unassigned');
       onOpenChange(false);
     } catch (err) {
-      console.error('Failed to create task:', err);
+      console.error('Failed to update task:', err);
     } finally {
       setLoading(false);
     }
@@ -81,14 +97,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <CheckSquare className="w-4 h-4" />
+              <Pencil className="w-4 h-4" />
             </div>
             <DialogTitle className="text-xl mt-1 font-semibold">
-              Add Task {columnName && <span className="text-slate-400 text-sm font-normal">in {columnName}</span>}
+              Edit Task {columnName && <span className="text-slate-400 text-sm font-normal">in {columnName}</span>}
             </DialogTitle>
           </div>
           <DialogDescription className="text-slate-400">
-            Define task details, assign team members, and set priority.
+            Update task details, reassign team members, or adjust priority.
           </DialogDescription>
         </DialogHeader>
 
@@ -186,11 +202,36 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Due Date
-            </label>
-            <CustomDatePicker value={dueDate} onChange={(val) => setDueDate(val)} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {columns && columns.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Status / Column
+                </label>
+                <Select
+                  value={columnId ? columnId.toString() : ''}
+                  onValueChange={(val) => setColumnId(Number(val))}
+                >
+                  <SelectTrigger className="bg-slate-950/60 border-slate-800 text-slate-100">
+                    <SelectValue placeholder="Select Column" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                    {columns.map((col) => (
+                      <SelectItem key={col.id} value={col.id.toString()}>
+                        {col.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Due Date
+              </label>
+              <CustomDatePicker value={dueDate} onChange={(val) => setDueDate(val)} />
+            </div>
           </div>
 
           <DialogFooter className="pt-2 bg-transparent border-0">
@@ -209,10 +250,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Adding...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Saving...
                 </span>
               ) : (
-                'Create Task'
+                'Save Changes'
               )}
             </Button>
           </DialogFooter>

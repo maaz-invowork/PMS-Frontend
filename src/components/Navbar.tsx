@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                           {user.role && (
                             <Badge
                               variant={user.role.name === 'admin' ? 'destructive' : 'secondary'}
-                              className="text-[10px] px-1.5 py-0 font-medium uppercase tracking-wider shrink-0"
+                              className="text-[10px] px-1.5 py-0 font-medium border border-slate-300/20 uppercase tracking-wider shrink-0"
                             >
                               {user.role.name === 'admin' && <Shield className="w-2.5 h-2.5 inline" />}
                               <span className="capitalize">{user.role.name}</span>
